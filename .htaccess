@@ -1,0 +1,15 @@
+# Prevent access to sensitive files
+<FilesMatch "^(config\.php|\.refresh-token\.php|error.*\.log)$">
+    Deny from all
+</FilesMatch>
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect against unauthorized access to run.php without cronjob key
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} run\.php$
+    RewriteCond %{QUERY_STRING} !key=.+ [NC]
+    RewriteRule ^ - [F,L]
+</IfModule>

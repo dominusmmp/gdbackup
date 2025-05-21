@@ -1,0 +1,10 @@
+config.php
+.refresh-token.php
+.logs
+error.log
+error.*.log
+*.sql
+*.sql.gz
+*.zip
+.vscode
+.DS_Store

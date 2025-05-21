@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive API Authentication</title>
+    <style>
+        /*! tailwindcss v4.1.7 | MIT License | https://tailwindcss.com */
+        @layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-border-style:solid;--tw-font-weight:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000}}}@layer theme{:root,:host{--font-sans:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--color-red-100:oklch(93.6% .032 17.717);--color-red-500:oklch(63.7% .237 25.331);--color-red-600:oklch(57.7% .245 27.325);--color-green-100:oklch(96.2% .044 156.743);--color-green-500:oklch(72.3% .219 149.579);--color-green-600:oklch(62.7% .194 149.214);--color-blue-200:oklch(88.2% .059 254.128);--color-blue-600:oklch(54.6% .245 262.881);--color-blue-700:oklch(48.8% .243 264.376);--color-gray-100:oklch(96.7% .003 264.542);--color-gray-300:oklch(87.2% .01 258.338);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-white:#fff;--spacing:.25rem;--container-2xl:42rem;--text-sm:.875rem;--text-sm--line-height:calc(1.25/.875);--text-base:1rem;--text-base--line-height:calc(1.5/1);--text-2xl:1.5rem;--text-2xl--line-height:calc(2/1.5);--font-weight-semibold:600;--radius-2xl:1rem;--radius-3xl:1.5rem;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4,0,.2,1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab, red, red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.block{display:block}.flex{display:flex}.hidden{display:none}.min-h-screen{min-height:100vh}.w-full{width:100%}.max-w-2xl{max-width:var(--container-2xl)}.flex-1{flex:1}.list-inside{list-style-position:inside}.list-decimal{list-style-type:decimal}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1{gap:calc(var(--spacing)*1)}.gap-2{gap:calc(var(--spacing)*2)}.gap-4{gap:calc(var(--spacing)*4)}.gap-6{gap:calc(var(--spacing)*6)}.rounded-2xl{border-radius:var(--radius-2xl)}.rounded-3xl{border-radius:var(--radius-3xl)}.border{border-style:var(--tw-border-style);border-width:1px}.border-gray-300{border-color:var(--color-gray-300)}.border-green-500{border-color:var(--color-green-500)}.border-red-500{border-color:var(--color-red-500)}.bg-blue-600{background-color:var(--color-blue-600)}.bg-gray-100{background-color:var(--color-gray-100)}.bg-gray-500{background-color:var(--color-gray-500)}.bg-green-100{background-color:var(--color-green-100)}.bg-red-100{background-color:var(--color-red-100)}.bg-white{background-color:var(--color-white)}.p-2{padding:calc(var(--spacing)*2)}.p-4{padding:calc(var(--spacing)*4)}.px-1{padding-inline:calc(var(--spacing)*1)}.px-4{padding-inline:calc(var(--spacing)*4)}.py-2{padding-block:calc(var(--spacing)*2)}.font-mono{font-family:var(--font-mono)}.text-2xl{font-size:var(--text-2xl);line-height:var(--tw-leading,var(--text-2xl--line-height))}.text-base{font-size:var(--text-base);line-height:var(--tw-leading,var(--text-base--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.break-all{word-break:break-all}.text-blue-600{color:var(--color-blue-600)}.text-green-600{color:var(--color-green-600)}.text-red-600{color:var(--color-red-600)}.text-white{color:var(--color-white)}.shadow-md{--tw-shadow:0 4px 6px -1px var(--tw-shadow-color,#0000001a),0 2px 4px -2px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,visibility,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}@media (hover:hover){.hover\:bg-blue-700:hover{background-color:var(--color-blue-700)}.hover\:bg-gray-600:hover{background-color:var(--color-gray-600)}.hover\:underline:hover{text-decoration-line:underline}}.focus\:border-blue-600:focus{border-color:var(--color-blue-600)}.focus\:ring:focus{--tw-ring-shadow:var(--tw-ring-inset,)0 0 0 calc(1px + var(--tw-ring-offset-width))var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.focus\:ring-blue-200:focus{--tw-ring-color:var(--color-blue-200)}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:opacity-60:disabled{opacity:.6}@media (min-width:40rem){.sm\:p-6{padding:calc(var(--spacing)*6)}.sm\:p-8{padding:calc(var(--spacing)*8)}}}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-100 p-4 sm:p-8">
+    <div class="max-w-2xl w-full flex flex-col items-center gap-6 bg-white rounded-3xl shadow-md p-4 sm:p-6">
+        <h1 class="text-2xl font-semibold text-blue-600">Google Drive API Authentication</h1>
+
+        <div id="errorAlert" class="hidden bg-red-100 text-red-600 p-4 rounded-3xl" role="alert"></div>
+        <div id="successAlert" class="hidden bg-green-100 text-green-600 p-4 rounded-3xl" role="alert"></div>
+
+        <div id="authCodeSection" class="hidden flex flex-col w-full gap-2">
+            <p class="text-base px-1">Your Google API Auth Code:</p>
+            <div class="flex items-center gap-2 bg-gray-100 p-4 rounded-3xl">
+                <code id="authCode" class="flex-1 font-mono break-all"></code>
+                <button id="copyAuthCode" class="bg-gray-500 text-white px-4 py-2 rounded-2xl hover:bg-gray-600 transition" aria-label="Copy auth code to clipboard">Copy</button>
+            </div>
+            <p class="text-sm px-1">Copy this code and paste it into <code>$authCode</code> in <code>config.php</code>.</p>
+        </div>
+
+        <div id="inputSection" class="flex flex-col w-full gap-4">
+            <div class="flex flex-col w-full gap-2 px-1">
+                <p class="text-base">Follow these steps to get your Google API auth code:</p>
+                <ol class="text-sm list-decimal list-inside">
+                    <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-blue-600 hover:underline">Google Cloud Console</a>, create a project, and enable the Google Drive API.</li>
+                    <li>Create an OAuth 2.0 Client ID (select "Web application") and copy the Client ID.</li>
+                    <li>Add this page’s URL as an "Authorized redirect URI" in Google Cloud Console:</li>
+                </ol>
+            </div>
+
+            <div class="flex flex-col w-full gap-2">
+                <div class="flex items-center gap-2 bg-gray-100 p-4 rounded-3xl">
+                    <code id="redirectUri" class="flex-1 font-mono break-all"></code>
+                    <button id="copyRedirectUri" class="bg-gray-500 text-white px-4 py-2 rounded-2xl hover:bg-gray-600 transition" aria-label="Copy redirect URI to clipboard">Copy</button>
+                </div>
+                <p class="text-sm px-1">Note: Google requires HTTPS for redirect URIs, except for localhost which can use HTTP.</p>
+            </div>
+
+            <div class="flex flex-col w-full gap-2">
+                <div class="flex flex-col w-full gap-1">
+                    <label for="clientId" class="text-base block px-1">Google API Client ID</label>
+                    <input id="clientId" type="text" placeholder="e.g., 1234567890-abcdefg.apps.googleusercontent.com" class="w-full p-2 border border-gray-300 rounded-2xl focus:border-blue-600 focus:ring focus:ring-blue-200 focus:ring-opacity-50" aria-describedby="clientIdError">
+                    <div id="clientIdError" class="text-sm text-red-600 px-1 hidden" role="alert"></div>
+                </div>
+
+                <button id="generateAuthUrl" class="w-full bg-blue-600 text-white py-2 rounded-2xl hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed" disabled aria-label="Generate authentication URL">Generate Auth URL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const clientIdInput = document.getElementById('clientId');
+        const clientIdError = document.getElementById('clientIdError');
+        const redirectUri = document.getElementById('redirectUri');
+        const copyRedirectUri = document.getElementById('copyRedirectUri');
+        const generateAuthUrl = document.getElementById('generateAuthUrl');
+        const authCodeSection = document.getElementById('authCodeSection');
+        const inputSection = document.getElementById('inputSection');
+        const authCode = document.getElementById('authCode');
+        const copyAuthCode = document.getElementById('copyAuthCode');
+        const errorAlert = document.getElementById('errorAlert');
+        const successAlert = document.getElementById('successAlert');
+
+        // Check protocol to prevent file:// usage
+        if (window.location.protocol === 'file:') {
+            errorAlert.textContent = 'Error: This page cannot be accessed via file://. Please host auth.html on a web server with HTTP or HTTPS (e.g., http://localhost or https://yourdomain.com) or use the project’s authentication page at https://dominusmmp.github.io/gdbackup/auth.html.';
+            errorAlert.classList.remove('hidden');
+            inputSection.classList.add('hidden');
+            throw new Error('Invalid protocol: file://');
+        }
+
+        // Auto-detect redirect URI
+        let defaultRedirectUri = window.location.href.split('?')[0];
+        redirectUri.textContent = defaultRedirectUri;
+
+        // Validate redirect URI (http:// for localhost, https:// for others)
+        function validateRedirectUri(uri) {
+            const isLocalhost = uri.startsWith('http://localhost') || uri.startsWith('http://127.0.0.1');
+            const isValid = (uri.startsWith('https://') || (isLocalhost && uri.startsWith('http://')));
+            if (!isValid) {
+                errorAlert.textContent = 'Error: The redirect URI must use HTTPS (or HTTP for localhost). Please host auth.html on a web server with HTTPS (e.g., https://yourdomain.com) or use http://localhost. Alternatively, use the project’s authentication page at https://dominusmmp.github.io/gdbackup/auth.html.';
+                errorAlert.classList.remove('hidden');
+                inputSection.classList.add('hidden');
+                throw new Error('Invalid redirect URI protocol');
+            }
+            return isValid;
+        }
+
+        validateRedirectUri(defaultRedirectUri);
+
+        // Validate Client ID
+        const clientIdRegex = /^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/;
+        function validateClientId(value) {
+            const isValid = clientIdRegex.test(value);
+            clientIdInput.classList.toggle('border-green-500', isValid);
+            clientIdInput.classList.toggle('border-red-500', !isValid && value);
+            clientIdError.textContent = isValid || !value ? '' : 'Invalid Client ID format.';
+            clientIdError.classList.toggle('hidden', isValid || !value);
+            generateAuthUrl.disabled = !isValid;
+            return isValid;
+        }
+
+        clientIdInput.addEventListener('input', () => validateClientId(clientIdInput.value));
+
+        // Generate auth URL
+        generateAuthUrl.addEventListener('click', () => {
+            const clientId = clientIdInput.value;
+            if (!validateClientId(clientId)) return;
+
+            const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+                scope: 'https://www.googleapis.com/auth/drive',
+                access_type: 'offline',
+                prompt: 'consent',
+                include_granted_scopes: 'true',
+                response_type: 'code',
+                state: 'state_parameter_passthrough_value',
+                redirect_uri: defaultRedirectUri,
+                client_id: clientId
+            }).toString();
+
+            window.location.href = authUrl;
+        });
+
+        // Handle OAuth response
+        const params = new URLSearchParams(window.location.search);
+        const authCodeParam = params.get('code');
+        const errorParam = params.get('error');
+
+        if (errorParam) {
+            errorAlert.textContent = `OAuth Error: ${errorParam}. ${errorParam === 'access_denied' ? 'Please allow access to Google Drive.' : 'Check your Client ID or redirect URI in Google Cloud Console.'}`;
+            errorAlert.classList.remove('hidden');
+        } else if (authCodeParam) {
+            authCode.textContent = authCodeParam;
+            authCodeSection.classList.remove('hidden');
+            inputSection.classList.add('hidden');
+            successAlert.textContent = 'Auth code generated successfully!';
+            successAlert.classList.remove('hidden');
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text, button, label) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.textContent = 'Copied!';
+                    button.setAttribute('aria-label', `${label} copied to clipboard`);
+                    setTimeout(() => {
+                        button.textContent = 'Copy';
+                        button.setAttribute('aria-label', `Copy ${label} to clipboard`);
+                    }, 1000);
+                }).catch(() => alert('Failed to copy'));
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    button.textContent = 'Copied!';
+                    button.setAttribute('aria-label', `${label} copied to clipboard`);
+                    setTimeout(() => {
+                        button.textContent = 'Copy';
+                        button.setAttribute('aria-label', `Copy ${label} to clipboard`);
+                    }, 1000);
+                } catch (err) {
+                    alert('Failed to copy');
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        copyRedirectUri.addEventListener('click', () => copyToClipboard(redirectUri.textContent, copyRedirectUri, 'redirect URI'));
+        if (copyAuthCode) {
+            copyAuthCode.addEventListener('click', () => copyToClipboard(authCode.textContent, copyAuthCode, 'auth code'));
+        }
+
+        // Keyboard navigation
+        clientIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !generateAuthUrl.disabled) generateAuthUrl.click();
+        });
+    </script>
+</body>
+</html>

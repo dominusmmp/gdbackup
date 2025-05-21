@@ -1,145 +1,311 @@
+# MySQL Backup for cPanel
 
-# MySQL Database Auto Backup To Google Drive With PHP PDO
-
-PHP script to backup your MySQL databeses to Google Drive for free and in easy steps.
-To make the script run Automatically you need to set cronjobs.
-
-
+A free, open-source tool to back up MySQL databases from cPanel (or a LAMP server) to local storage, Google Drive, or Telegram. Supports four modes: local storage, zip upload to Google Drive, direct streaming to Google Drive, or zip upload to Telegram. Multiple modes can be used simultaneously for flexible backups. Designed to be easy to use, maintain, and debug, with efficient multi-mode execution and detailed logging.
 
 ## Features
+- **Backup Modes** (can be combined in `config.php`):
+  - `local`: Save backups to the server.
+  - `gd-upload`: Save backups locally, zip them, and upload the zip file to Google Drive.
+  - `gd-stream`: Stream backups directly to Google Drive without local storage.
+  - `tg-upload`: Save backups locally, zip them, and upload the zip file to a Telegram chat.
+- Secure cronjob access with a key.
+- Automatic deletion of old backups based on retention period (manual cleanup required for Telegram).
+- Encrypted Google Drive refresh token stored in `.refresh-token.php` for security.
+- Detailed error logging to daily log files for easy debugging.
+- **Efficient Multi-Mode Execution**: Database backups are generated once and reused across modes (e.g., local files are reused for `gd-upload` and `tg-upload` to minimize disk I/O).
+- **Memory Optimization**: Uses generators and optional chunking for large tables to reduce memory usage.
+- **Temporary Folder Cleanup**: Temporary backup folders are deleted after zipping unless `local` mode is used.
 
-- Fully free and runable on any server or hosting that supports PHP +7
-- Save backups to Google Drive
-- Option to limit backup days (E.g. last x days)
-- Option to stream encoded database data directly to Google Drive
-- Auto database compression to save space
+## Prerequisites
+- **Server Requirements**:
+  - PHP 7.4 or higher with `curl`, `pdo_mysql`, `openssl`, `zlib`, and `zip` extensions (checked at runtime).
+  - MySQL/MariaDB database(s) accessible via cPanel.
+  - Write permissions for the script directory (e.g., `chmod 755 /path/to/gdbackup`).
+- **Google Drive API** (for `gd-upload` or `gd-stream` modes):
+  - A Google Cloud project with the Drive API enabled.
+  - OAuth 2.0 Client ID and Secret from [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+- **Telegram Bot API** (for `tg-upload` mode):
+  - A Telegram bot created via [BotFather](https://t.me/BotFather).
+  - Bot API token and a chat ID (e.g., a channel or group).
+- **cPanel Access**:
+  - MySQL database credentials (username, password, database names).
+  - Cronjob setup for automated backups.
 
+## Installation
+1. **Clone or Download**:
+   - Clone the repository: `git clone https://github.com/dominusmmp/gdbackup.git`
+   - Or download and extract the ZIP file to your cPanel File Manager (e.g., `/home/username/gdbackup`).
 
+2. **Set Permissions**:
+   - Ensure the script directory is writable: `chmod 755 /path/to/gdbackup`.
+   - Protect sensitive files (`config.php`, `.refresh-token.php`, `error.log`) by placing them outside the web root or using `.htaccess`:
+     ```apache
+     <FilesMatch "^(config\.php|\.refresh-token\.php|error.*\.log)$">
+         Deny from all
+     </FilesMatch>
+     ```
 
-## Requirements
+3. **Install Dependencies**:
+   - No external libraries are required; all dependencies are included in the `src` directory.
 
-- PHP +7
-- PHP extensions: PDO | PDO_MYSQL | Zip | Zlib
-- Cronjob to run the script automatically
+## Configuration
+The project includes a template configuration file, `config.template.php`, which you should copy and rename to `config.php` before customizing. **Do not edit `config.template.php` directly**, as it serves as a reference for the required settings. For Google Drive API authentication (for `gd-upload` or `gd-stream` modes), use `auth.html` to obtain the authorization code.
 
+1. **Create `config.php`**:
+   - Copy `config.template.php` to `config.php`:
+     ```bash
+     cp config.template.php config.php
+     ```
+   - Open `config.php` in a text editor and fill in the required values as described below.
+   - Ensure `config.php` is protected (e.g., `chmod 600 config.php`) and placed outside the web root or secured via `.htaccess`.
+   - **Validate Configuration**: Before running the script, verify all fields in `config.php` are correctly filled to avoid runtime errors.
 
+### Security Configuration
+- **`$isProductionMode`** (`config.php`):
+  - Set to `true` for production (logs errors to `error.log.Y-m-d.log`).
+  - Set to `false` for debugging (displays errors in the cli/browser).
+- **`$cronjobKey`** (`config.php`):
+  - Generate a unique, random string (e.g., via a password manager).
+  - Example: `'x7k9p2m4q8v5n3j6h'`.
 
-## Deployment
+### General Configuration
+- **`$root`** (`config.php`):
+  - Path to store temporary backup files (default: `__DIR__`).
+  - Ensure it’s writable (e.g., `chmod 755 /path/to/gdbackup`).
+- **`$backupFilesPrefix`** (`config.php`):
+  - Prefix for backup files (e.g., `prefix.20250101.sql.gz`).
+- **`$mode`** (`config.php`):
+  - Array of modes: `['local']`, `['gd-upload', 'tg-upload']`, etc.
+  - Valid modes: `'local'`, `'gd-upload'`, `'gd-stream'`, `'tg-upload'`.
+  - Example: `['local', 'gd-upload', 'tg-upload']` backs up to local disk, Google Drive, and Telegram.
+- **`$timezone`** (`config.php`):
+  - Set to your server’s timezone (e.g., `'UTC'`, `'America/New_York'`).
+  - See [PHP Timezones](https://www.php.net/manual/en/timezones.php).
+- **`$retentionDays`** (`config.php`):
+  - Days to keep backups on local or Google Drive (e.g., `30`).
+  - Set to `0` for unlimited retention.
+  - For `tg-upload`, manual cleanup is required due to Telegram API limitations.
+- **`$memoryLimit`** (`config.php`):
+  - PHP memory limit (e.g., `'512M'`, `'1024M'`).
+  - Choose based on database size (e.g., `512M` for small databases, `2048M` for large ones).
+  - Must be in a valid format (e.g., `512M`, `1G`); invalid formats may cause errors.
 
-### 1. Configuration
-To deploy this project first you will need to have your database authentication parameters
-and also get the needed authentication parameters from your Google Cloud console
-and then add them to the `config.inc.php` file.
+### Database Configuration
+- **`$dbHost`** (`config.php`):
+  - Database host (e.g., `'localhost:3306'` or `'db.example.com'`).
+  - Find in cPanel’s MySQL Databases.
+- **`$dbUsername`** (`config.php`):
+  - MySQL username (e.g., `'myuser'`).
+- **`$dbPassword`** (`config.php`):
+  - MySQL password (e.g., `'mypassword'`).
+- **`$dbNames`** (`config.php`):
+  - Array of database names (e.g., `['mydatabase']`).
+  - Note: Table definitions are cleaned (e.g., `AUTO_INCREMENT`, `ENGINE`, `CHARSET`, `COLLATE` are removed) for simpler backups. Verify compatibility during restoration.
 
-#### General Config
+### Google Drive API Configuration (for `gd-upload` or `gd-stream` modes)
+1. **Create OAuth Credentials**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+   - Enable the Google Drive API.
+   - Create an OAuth 2.0 Client ID (select “Web application”).
+   - Add the redirect URI (e.g., `http://yourdomain.com/auth.html` or `https://dominusmmp.github.io/gdbackup/auth.html`) under “Authorized redirect URIs”.
+   - Copy the Client ID and Client Secret.
 
-`$homedir`
-- This defines the absolute path to the project directory.
-  It's better to not touch the value of this one
-  but if the project is not working because of it
-  you can manually insert your project directory path.
+2. **Obtain `$authCode`**:
+   - Use `auth.html` to generate the authorization code:
+     - **Option 1: Local Server**: Use `auth.html` on your local web server (e.g., `http://localhost/auth.html`).
+     - **Option 2: Host Online**: Upload `auth.html` to your web server (e.g., `http://yourdomain.com/auth.html`).
+     - **Option 3: Project GitHub Pages**: Use the project’s GitHub Pages version: `https://dominusmmp.github.io/gdbackup/auth.html`.
+     - Enter your Client ID, verify the redirect URI, and click “Generate Auth URL”.
+     - Authenticate with Google, and you’ll be redirected to `auth.html` with your `authCode` displayed.
+     - Copy the `authCode` and paste it into `$authCode` in `config.php`.
+       ```php
+       $authCode = '4/0A...';
+       ```
 
-`$dbprefix`
-- It's just to know what you are uploading in your Google Drive.
-  name it anything you want
+3. **Configure `config.php`**:
+   - **`$driveRootFolderId`**:
+     - ID of the Google Drive folder for backups (optional; leave empty for root).
+     - Find in the URL: `https://drive.google.com/drive/folders/YourFolderID`.
+     - Example: `'1aBcDeFgHiJkLmNoPqRsTuVwXyZ'`.
+   - **`$clientId`**:
+     - OAuth Client ID (e.g., `'1234567890-abcdefg.apps.googleusercontent.com'`).
+   - **`$clientSecret`**:
+     - OAuth Client Secret (e.g., `'GOCSPX-abcdefg1234567890'`).
+   - **`$redirectUri`**:
+     - URL of `auth.html` (e.g., `http://yourdomain.com/auth.html` or `https://dominusmmp.github.io/gdbackup/auth.html`).
+   - **`$authCode`**:
+     - Authorization code from step 2 (e.g., `'4/0A...'`).
+   - **`$encryptionPassword`**:
+     - Strong password for refresh token encryption (e.g., `'StrongPassword123!'`).
+   - **`$encryptionKey`**:
+     - Key/UUID for encryption (generate at [uuidgenerator.net](https://www.uuidgenerator.net)).
+     - Example: `'550e8400-e29b-41d4-a716-446655440000'`.
+   - **Note**: The refresh token is stored in `.refresh-token.php` with the format `<?php defined('GDBPATH') || die('forbidden'); // [timestamp] $encryptedToken`. Protect this file (`chmod 600`) and back it up. If lost or corrupted, regenerate `$authCode` via `auth.html`.
 
-`$local_save_mode`
-- If you set this parameter to `true`
-  all databases in the list will first save as separated files locally,
-  then they will zip together as a compressed zip file
-  and then the zip file will upload to your Google Drive folder.
-- If you set it to `false` then each database data will be
-  encoded, compressed and streamed directly to your Google Drive
-  and saved in a separate folder.
-  (I personally prefer this one since there's no need to save any file locally
-  and also this method has a better compression rate and will save more space)
+### Telegram API Configuration (for `tg-upload` mode)
+1. **Create a Telegram Bot**:
+   - Open Telegram and start a chat with [BotFather](https://t.me/BotFather).
+   - Send `/newbot`, follow the prompts to name your bot, and receive a Bot API token (e.g., `123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11`).
+   - Copy the token for use in `config.php`.
 
-`$delete_time`
-- Days to keep database backups. All backups older than `x` days that you will set
-  for this parameter will be automatically deleted from your Google Drive folder
+2. **Set Up a Chat**:
+   - Choose a chat where the bot will send backups. The bot must have permission to send messages and upload files in the chosen chat. Supported chat types:
+     - **Private Chat**: Use your personal chat with the bot. Start a conversation with the bot to initialize it.
+     - **Group/Supergroup**: Add the bot to a group or supergroup and grant it administrator privileges (to send files).
+     - **Channel**: Add the bot to a public or private channel as an administrator.
+   - **Obtain the Chat ID**:
+     - **Option 1: Use a Bot**: Send a message in the target chat (private, group, or channel), then use a bot like [GetIDs Bot](https://t.me/getidsbot) to retrieve the chat ID.
+       - For private chats: You’ll get a positive integer (e.g., `123456789`).
+       - For public channels/groups/supergroups: You’ll get a negative integer (e.g., `-123456789` or `-100123456789`).
+       - For channels: You’ll get the channel username (e.g., `@MyBackupChannel`) or a negative integer (e.g., `-100123456789`).
+     - **Option 2: Channel Username**: For public channels, use the channel’s username (e.g., `@MyBackupChannel`).
+     - **Option 3: Test with Bot**: Send a message to the bot or chat, then use the Telegram API to retrieve updates:
+       - Make an API call: `https://api.telegram.org/bot<YourBotToken>/getUpdates`.
+       - Look for the `chat` object in the response to find the `id` or `username`.
 
-#### Database Config
+3. **Configure `config.php`**:
+   - **`$telegramBotToken`**:
+     - Paste the Bot API token from BotFather (e.g., `'123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'`).
+   - **`$telegramChatId`**:
+     - Paste the chat ID or username based on the chat type:
+       - Private chat: Positive integer (e.g., `'123456789'`).
+       - Private channel/group/supergroup: Negative integer (e.g., `'-123456789'` or `'-100123456789'`).
+       - Public channel: Username (e.g., `'@MyBackupChannel'`) or negative integer (e.g., `'-100123456789'`).
+   - **`$telegramFileSizeLimit`**:
+     - Maximum file size for uploads in bytes (default: `50000000` for 50MB).
+     - For premium Telegram bots, set up to `2000000000` (2GB).
+     - Example: `2000000000`.
 
-`$dbhost`
-- Database host name E.g. `localhost` or `127.0.0.1` or with port `localhost:3306`
+   Example configuration in `config.php`:
+   ```php
+   $telegramBotToken = '123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11';
+   $telegramChatId = '@MyBackupChannel'; // Or '123456789' for private chat, '-100123456789' for group/channel
+   $telegramFileSizeLimit = 50000000;
+   ```
 
-`$dbuser`
-- Your database username
+## Usage
+### Manual Backup
+- Run via HTTP: `http://yourdomain.com/run.php?key=your-cronjob-key`
+- Run via CLI: `php /path/to/run.php your-cronjob-key`
 
-`$dbpass`
-- Your database password
+### Automated Backup (Cronjob)
+1. In cPanel, go to “Cron Jobs”.
+2. Add a new cronjob:
+   ```
+   /usr/local/bin/php /path/to/run.php your-cronjob-key
+   ```
+3. Set the schedule (e.g., daily at midnight).
 
-`$dbnames`
-- List of databases you want to backup E.g `["db_name"]` or `["db_1_name", "db_2_name"]`
+### Backup Output
+- **Local Mode**: Backups are saved to `$root/prefix/` as zipped files (e.g., `prefix.20250101.zip`).
+- **gd-upload/gd-stream Modes**: Backups are uploaded to Google Drive under the specified folder, with subfolders by date and time.
+- **tg-upload Mode**: Backups are uploaded as zip files to the specified Telegram chat.
+- Multiple modes produce outputs for each destination (e.g., local file path, Google Drive URL, Telegram message ID).
+- Temporary folders are deleted after zipping unless `local` mode is used.
+- Check `error.log.Y-m-d.log` in the `.logs` directory for issues.
 
-#### Google Drive API Config
+## Database Restoration
+The `restore.php` script restores a MySQL database from a `.sql` or `.sql.gz` backup file created by `run.php`. It supports both hardcoded configuration and interactive CLI prompts.
 
-`$refresh_token_protection_password` \
-`$refresh_token_protection_key`
-- Encryption password and key to secure your refresh token
-  because it'll be save in a json file
+### Manual Restoration
+1. **Edit `restore.php`** (optional):
+   - Open `restore.php` and set the following variables at the top:
+     ```php
+     $dbHost = 'localhost:3306'; // Database host
+     $dbUsername = 'myuser'; // Database username
+     $dbPassword = 'mypassword'; // Database password
+     $dbName = 'mydatabase'; // Database to restore
+     $backupFile = '/path/to/backup.sql.gz'; // Path to .sql or .sql.gz file
+     ```
+   - If left empty, the script will prompt for these values when run via CLI.
 
-`$google_client_id` \
-`$google_client_secret`
-- Google API Client authentication parameters. You can get them from
-  https://console.cloud.google.com/apis/credentials
-  after creating a Google Drive project at your Google Cloud console
+2. **Run the Script**:
+   - **Via CLI** (recommended):
+     ```bash
+     php /path/to/restore.php
+     ```
+     - If variables are not set, follow the interactive prompts to enter `dbHost`, `dbUsername`, `dbPassword`, `dbName`, and `backupFile`.
+   - **Via HTTP**:
+     - Access `http://yourdomain.com/restore.php` (requires variables to be set in the script).
+     - Note: HTTP mode is less secure; use CLI for production environments.
 
-`$google_redirect_uri`
-- Path to file `auth_code.php` which you need to get the next parameter value.
-  You also have to set this in your Google Drive project at
-  https://console.cloud.google.com/apis/credentials
+3. **Output**:
+   - On success: Displays “Successfully restored database 'dbname' from backupFile”.
+   - On failure: Displays an error message (e.g., invalid file, database connection failure).
+   - Temporary decompressed files (for `.sql.gz`) are automatically deleted.
 
-`$google_auth_code`
-- Really annoying to get this parameter value from Google
-  but you can easily get it with the file `auth_code.php`.
-  Just edit the file `auth_code.php` and insert your `$google_client_id`
-  and then load it in your browser and follow the steps.
-  Note that you need to get this just once or when you don't have the refresh token.
-  If your project at the Google Cloud console is not in testing mode you need to get it weekly.
+### Restoration Notes
+- **File Format**: The backup file must be a `.sql` or `.sql.gz` file generated by this project.
+- **Database**: The target database must exist before restoration.
+- **Permissions**: Ensure the script has read access to the backup file (`chmod 644` or higher).
+- **Foreign Keys**: The script disables foreign key checks during restoration to avoid constraint errors.
+- **Debugging**: Errors are displayed in the output.
 
-`$gdrive_root_id`
-- Google Drive folder id which you want backup files to upload. It's easy to get it,
-  just open the Google Drive folder you want
-  and you can see your folder id in your browser's address bar.\
-  E.g. https://drive.google.com/drive/folders/2DSutgFGfkfgDjhfQJaLDFdfsAsdrsGdu1F2e \
-  In the link above, folder id is `2DSutgFGfkfgDjhfQJaLDFdfsAsdrsGdu1F2e`
+## cPanel Tips
+- **Cronjob PATH**: If the cronjob fails, specify the PHP binary path explicitly (e.g., `/usr/local/bin/php`).
+- **Path Restrictions**: On shared hosting, ensure `$root` is within your home directory (e.g., `/home/username/gdbackup`).
+- **File Permissions**: Use `chmod 755` for the script directory and `chmod 600` for `config.php`, `.refresh-token.php`, and `./logs/*`.
+- **Large Databases**: Increase `$memoryLimit` (e.g., `2048M`) for large databases to avoid memory errors.
 
-### 2. Running The Script
+## Troubleshooting
+- **Error: “Access denied!”**
+  - Verify `$cronjobKey` matches in `config.php` and your cronjob/URL.
+- **Error: “Missing required config values”**
+  - Ensure all fields in `config.php` are filled, especially for selected modes (e.g., Google Drive or Telegram configs).
+- **Error: “Invalid mode”**
+  - Check that `$mode` in `config.php` contains only valid modes (`local`, `gd-upload`, `gd-stream`, `tg-upload`).
+- **Error: “The `curl`, `pdo_mysql`, `openssl`, `zlib`, or `zip` extension is not loaded”**
+  - Enable the missing PHP extension in cPanel’s PHP configuration or your server’s PHP configuration.
+  - Contact your hosting provider to enable the missing PHP extension in cPanel’s PHP configuration.
+- **Google Drive Authentication Fails**
+  - Verify `$clientId`, `$clientSecret`, and `$redirectUri` in `config.php`.
+  - Ensure the redirect URI in Google Cloud Console matches `$redirectUri` in `config.php`.
+  - If `.refresh-token.php` is corrupted or deleted, regenerate `$authCode` via `auth.html`.
+  - Check the browser console (F12) for errors when using `auth.html`.
+- **Google Drive API Quota Errors**
+  - The script includes rate limiting to avoid quotas, but you may hit Google Drive API limits with frequent backups. Check [Google Cloud Console](https://console.cloud.google.com/apis) for quota details or increase limits.
+- **Telegram Upload Fails**
+  - Verify `$telegramBotToken` and `$telegramChatId` in `config.php`.
+  - Ensure the bot is an administrator in the chat.
+  - Check file size against `$telegramFileSizeLimit` (default 50MB, 2GB for premium bots).
+- **Permission Issues**
+  - Ensure the script directory is writable (`chmod 755`).
+  - Secure `config.php`, `.refresh-token.php`, and `./logs/*` (`chmod 600`).
+- **Memory Errors**
+  - Increase `$memoryLimit` in `config.php` (e.g., `2048M`) for large databases.
+- **Debugging**
+  - Set `$isProductionMode = false` to display errors.
+  - Check `.logs/error.log.Y-m-d.log` for detailed logs, including timestamps and error levels.
+  - For `auth.html` issues, open the browser console (F12) to view JavaScript errors.
 
-#### Manual Run
+## Project Structure
+```
+🗂️ gdbackup/
+├── 📁 .logs/
+│   └── error.log.Y-m-d.log
+├── 📁 src/
+│   ├── BackupController.php
+│   ├── EncryptionHelper.php
+│   ├── GoogleDriveAPI.php
+│   ├── Logger.php
+│   ├── MySQLBackupAPI.php
+│   ├── TelegramAPI.php
+│   └── ZipHelper.php
+├── .gitignore
+├── .htaccess
+├── .refresh-token.php
+├── auth.html
+├── config.php
+├── config.template.php
+├── readme.md
+├── restore.php
+└── run.php
+```
 
-To run the script manually, load the file `gdrive_autobackup.php` in your browser.
-Note that the `$production_mode` value should be `false`
-if you're running the script manually.
-
-#### Cronjob
-
-To run the script with Cronjob there are some steps should be done:
-
-- Set `$production_mode` value in file `gdrive_autobackup.php` to `true`
-- For the security reasons and to avoid running script from everywhere,
-  you should set `$cronjob_key` value in file `gdrive_autobackup.php`.
-
-  E.g `c6ONXu9VIq6ysdTBrKh06aRpdoRlA3jV` \
-  Cronjob link will be: \
-  `path-to-script-directly/gdrive_autobackup.php?cron=c6ONXu9VIq6ysdTBrKh06aRpdoRlA3jV` \
-  If you're running the script on a cpanel or linux hosting,
-  the command will be: \
-  `/usr/local/bin/php path-to-script-directly/gdrive_autobackup.php cron=c6ONXu9VIq6ysdTBrKh06aRpdoRlA3jV` \
-  or \
-  `/usr/local/bin/php /home/username/public_html/gdrive_autobackup.php cron=c6ONXu9VIq6ysdTBrKh06aRpdoRlA3jV`
-
-  You can set the Cronjob time as you want, daily, hourly, or even every minute.
-
-
-
-## Feedback
-
-If you have any feedback or question, please reach out to me at dominusmmp@gmail.com
-
-
+## Acknowledgments
+- Built for cPanel users to simplify MySQL backups.
+- Enhanced with assistance from [Grok](https://grok.com).
+- Inspired by the need for free, reliable backup solutions.
 
 ## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
