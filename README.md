@@ -38,7 +38,7 @@ A free, open-source tool to back up MySQL databases from cPanel (or a LAMP serve
 
 2. **Set Permissions**:
    - Ensure the script directory is writable: `chmod 755 /path/to/gdbackup`.
-   - Protect sensitive files (`config.php`, `.refresh-token.php`, `error.log`) by placing them outside the web root or using `.htaccess`:
+   - Protect sensitive files (`config.php`, `.refresh-token.php`, `error.*.log`) by placing them outside the web root or using `.htaccess`:
      ```apache
      <FilesMatch "^(config\.php|\.refresh-token\.php|error.*\.log)$">
          Deny from all
@@ -62,7 +62,7 @@ The project includes a template configuration file, `config.template.php`, which
 
 ### Security Configuration
 - **`$isProductionMode`** (`config.php`):
-  - Set to `true` for production (logs errors to `error.log.Y-m-d.log`).
+  - Set to `true` for production (logs errors to `error.Y-m-d.log`).
   - Set to `false` for debugging (displays errors in the cli/browser).
 - **`$cronjobKey`** (`config.php`):
   - Generate a unique, random string (e.g., via a password manager).
@@ -202,7 +202,7 @@ The project includes a template configuration file, `config.template.php`, which
 - **tg-upload Mode**: Backups are uploaded as zip files to the specified Telegram chat.
 - Multiple modes produce outputs for each destination (e.g., local file path, Google Drive URL, Telegram message ID).
 - Temporary folders are deleted after zipping unless `local` mode is used.
-- Check `error.log.Y-m-d.log` in the `.logs` directory for issues.
+- Check `error.Y-m-d.log` in the `.logs` directory for issues.
 
 ## Database Restoration
 The `restore.php` script restores a MySQL database from a `.sql` or `.sql.gz` backup file created by `run.php`. It supports both hardcoded configuration and interactive CLI prompts.
@@ -275,14 +275,14 @@ The `restore.php` script restores a MySQL database from a `.sql` or `.sql.gz` ba
   - Increase `$memoryLimit` in `config.php` (e.g., `2048M`) for large databases.
 - **Debugging**
   - Set `$isProductionMode = false` to display errors.
-  - Check `.logs/error.log.Y-m-d.log` for detailed logs, including timestamps and error levels.
+  - Check `.logs/error.Y-m-d.log` for detailed logs, including timestamps and error levels.
   - For `auth.html` issues, open the browser console (F12) to view JavaScript errors.
 
 ## Project Structure
 ```
 🗂️ gdbackup/
 ├── 📁 .logs/
-│   └── error.log.Y-m-d.log
+│   └── error.Y-m-d.log
 ├── 📁 src/
 │   ├── BackupController.php
 │   ├── EncryptionHelper.php
